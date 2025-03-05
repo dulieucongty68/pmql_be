@@ -41,7 +41,7 @@ app.post("/auth/login", async (req, res) => {
 
     // Truy vấn user bằng Raw Query
     const user = await sequelize.query(
-      `SELECT * FROM "User" WHERE username = :username LIMIT 1;`,
+      `SELECT * FROM public."User" WHERE username = :username LIMIT 1;`,
       {
         replacements: { username },
         type: sequelize.QueryTypes.SELECT,
@@ -111,7 +111,7 @@ app.put("/auth/update-password", async (req, res) => {
 
     // Tìm user trong database bằng raw query
     const user = await sequelize.query(
-      `SELECT * FROM "User" WHERE username = :username LIMIT 1;`,
+      `SELECT * FROM public."User" WHERE username = :username LIMIT 1;`,
       {
         replacements: { username },
         type: sequelize.QueryTypes.SELECT,
@@ -129,7 +129,7 @@ app.put("/auth/update-password", async (req, res) => {
 
     // Cập nhật mật khẩu trong database
     await sequelize.query(
-      `UPDATE "User" SET password = :hashedPassword, is_first_login = false WHERE username = :username;`,
+      `UPDATE public."User" SET password = :hashedPassword, is_first_login = false WHERE username = :username;`,
       {
         replacements: { hashedPassword, username },
         type: sequelize.QueryTypes.UPDATE,
@@ -168,7 +168,7 @@ app.post("/auth/update-password", async (req, res) => {
 
     // Tìm user trong database bằng raw query
     const user = await sequelize.query(
-      `SELECT * FROM "User" WHERE username = :username LIMIT 1;`,
+      `SELECT * FROM public."User" WHERE username = :username LIMIT 1;`,
       {
         replacements: { username },
         type: sequelize.QueryTypes.SELECT,
@@ -187,7 +187,7 @@ app.post("/auth/update-password", async (req, res) => {
 
     // Cập nhật mật khẩu trong database
     await sequelize.query(
-      `UPDATE "User" SET password = :newHashedPassword, is_first_login = false WHERE username = :username And password = :hashedPassword;`,
+      `UPDATE public."User" SET password = :newHashedPassword, is_first_login = false WHERE username = :username And password = :hashedPassword;`,
       {
         replacements: { newHashedPassword, hashedPassword, username },
         type: sequelize.QueryTypes.UPDATE,
@@ -234,7 +234,7 @@ app.get("/customers", extractUserId, async (req, res) => {
     const userId = req.userId;
 
     // Lấy quyền hạn của user
-    const userQuery = `SELECT is_admin, is_team_lead, team_id FROM "User" WHERE id = :userId`;
+    const userQuery = `SELECT is_admin, is_team_lead, team_id FROM public."User" WHERE id = :userId`;
     const userResult = await sequelize.query(userQuery, {
       replacements: { userId },
       type: sequelize.QueryTypes.SELECT,
@@ -273,17 +273,17 @@ app.get("/customers", extractUserId, async (req, res) => {
                 ELSE 'Nhân viên'
               END AS updated_by,
               t.team_name
-        FROM "Customer" c
-        LEFT JOIN "User" u ON c.created_by = u.id
-        LEFT JOIN "User" u2 ON c.updated_by = u2.id
-        LEFT JOIN "Team" t ON t.id = c.team_id
+        FROM public."Customer" c
+        LEFT JOIN public."User" u ON c.created_by = u.id
+        LEFT JOIN public."User" u2 ON c.updated_by = u2.id
+        LEFT JOIN public."Team" t ON t.id = c.team_id
         WHERE 1=1 
         ${searchCondition}
         ${addFilter}
         ORDER BY c.created_at DESC
         LIMIT :limit OFFSET :offset
       )
-      SELECT CAST((SELECT COUNT(*) FROM "Customer" AS c WHERE 1=1 ${addFilter}) AS INTEGER) AS total, 
+      SELECT CAST((SELECT COUNT(*) FROM public."Customer" AS c WHERE 1=1 ${addFilter}) AS INTEGER) AS total, 
             json_agg(customer_data) AS customers 
       FROM customer_data;
       `,
@@ -347,12 +347,12 @@ app.get("/customers/export", async (req, res) => {
               ELSE null
               END as updated_at,
               t.team_name
-        FROM "Customer" c
-        LEFT JOIN "User" u ON c.created_by = u.id
-        LEFT JOIN "User" u2 ON c.updated_by = u2.id
-        LEFT JOIN "Team" t ON t.id = c.team_id
+        FROM public."Customer" c
+        LEFT JOIN public."User" u ON c.created_by = u.id
+        LEFT JOIN public."User" u2 ON c.updated_by = u2.id
+        LEFT JOIN public."Team" t ON t.id = c.team_id
       )
-      SELECT CAST((SELECT COUNT(*) FROM "Customer") AS INTEGER) AS total, 
+      SELECT CAST((SELECT COUNT(*) FROM public."Customer") AS INTEGER) AS total, 
             json_agg(customer_data) AS customers 
       FROM customer_data;
       `,
@@ -416,7 +416,7 @@ app.get("/customers/check", extractUserId, async (req, res) => {
     const userId = req.userId;
 
     // Lấy quyền hạn của user
-    const userQuery = `SELECT is_admin, is_team_lead, team_id FROM "User" WHERE id = :userId`;
+    const userQuery = `SELECT is_admin, is_team_lead, team_id FROM public."User" WHERE id = :userId`;
     const userResult = await sequelize.query(userQuery, {
       replacements: { userId },
       type: sequelize.QueryTypes.SELECT,
@@ -446,17 +446,17 @@ app.get("/customers/check", extractUserId, async (req, res) => {
                   ELSE 'Nhân viên'
               END AS updated_role,
               t.team_name
-        FROM "Customer" c
-        LEFT JOIN "User" u ON c.created_by = u.id
-        LEFT JOIN "User" u2 ON c.updated_by = u2.id
-        LEFT JOIN "Team" t ON t.id = c.team_id
+        FROM public."Customer" c
+        LEFT JOIN public."User" u ON c.created_by = u.id
+        LEFT JOIN public."User" u2 ON c.updated_by = u2.id
+        LEFT JOIN public."Team" t ON t.id = c.team_id
         WHERE 1=1
         ${searchCondition}
         ORDER BY c.created_at DESC
         LIMIT :limit OFFSET :offset
 )
 SELECT CAST((SELECT COUNT(*) 
-             FROM "Customer" c ) AS INTEGER) AS total, 
+             FROM public."Customer" c ) AS INTEGER) AS total, 
        json_agg(customer_data) AS customers
 FROM customer_data;
 
@@ -508,7 +508,7 @@ app.put("/customers/:id", async (req, res) => {
 
     // Kiểm tra khách hàng có tồn tại không
     const existingCustomer = await sequelize.query(
-      `SELECT * FROM "Customer" WHERE id = :id LIMIT 1`,
+      `SELECT * FROM public."Customer" WHERE id = :id LIMIT 1`,
       {
         replacements: { id },
         type: sequelize.QueryTypes.SELECT,
@@ -521,7 +521,7 @@ app.put("/customers/:id", async (req, res) => {
 
     // Cập nhật thông tin khách hàng
     await sequelize.query(
-      `UPDATE "Customer" 
+      `UPDATE public."Customer" 
        SET full_name = :full_name, 
            year_of_birth = :year_of_birth, 
            phone_number = :phone_number, 
@@ -576,7 +576,7 @@ app.post("/customers", async (req, res) => {
 
     // Kiểm tra số điện thoại đã tồn tại chưa
     const existingCustomer = await sequelize.query(
-      `SELECT * FROM "Customer" WHERE phone_number = :phone_number LIMIT 1`,
+      `SELECT * FROM public."Customer" WHERE phone_number = :phone_number LIMIT 1`,
       {
         replacements: { phone_number },
         type: sequelize.QueryTypes.SELECT,
@@ -590,7 +590,7 @@ app.post("/customers", async (req, res) => {
     // Thêm khách hàng mới
     await sequelize.query(
       `
-      INSERT INTO "Customer" (
+      INSERT INTO public."Customer" (
         full_name, year_of_birth, phone_number, note, role_note, 
         status, team_id, created_by, created_at, updated_by, updated_at
       ) 
@@ -652,7 +652,7 @@ app.put("/customers", extractUserId, async (req, res) => {
     }
 
     // Lấy quyền hạn của user
-    const userQuery = `SELECT is_admin, is_team_lead FROM "User" WHERE id = :userId`;
+    const userQuery = `SELECT is_admin, is_team_lead FROM public."User" WHERE id = :userId`;
     const userResult = await sequelize.query(userQuery, {
       replacements: { userId },
       type: sequelize.QueryTypes.SELECT,
@@ -667,7 +667,7 @@ app.put("/customers", extractUserId, async (req, res) => {
 
     // Lấy trạng thái hiện tại của khách hàng
     const currentStatusResult = await sequelize.query(
-      `SELECT status FROM "Customer" WHERE id = :id`,
+      `SELECT status FROM public."Customer" WHERE id = :id`,
       {
         replacements: { id },
         type: sequelize.QueryTypes.SELECT,
@@ -715,7 +715,7 @@ app.put("/customers", extractUserId, async (req, res) => {
 
     // Cập nhật trạng thái khách hàng
     await sequelize.query(
-      `UPDATE "Customer" 
+      `UPDATE public."Customer" 
        SET 
        full_name =:full_name
        , year_of_birth = :year_of_birth
@@ -762,7 +762,7 @@ app.delete("/customers/:id", extractUserId, async (req, res) => {
     const userId = req.userId;
 
     // Lấy thông tin user hiện tại
-    const userQuery = `SELECT is_admin, team_id FROM "User" WHERE id = :userId`;
+    const userQuery = `SELECT is_admin, team_id FROM public."User" WHERE id = :userId`;
     const userInfo = await sequelize.query(userQuery, {
       type: sequelize.QueryTypes.SELECT,
       replacements: { userId },
@@ -772,7 +772,7 @@ app.delete("/customers/:id", extractUserId, async (req, res) => {
 
     if (!isAdmin) {
       // Lấy thông tin user hiện tại
-      const checkUserStatus = `SELECT status FROM "Customer" WHERE id = :id`;
+      const checkUserStatus = `SELECT status FROM public."Customer" WHERE id = :id`;
       const checkUserStatusInfo = await sequelize.query(checkUserStatus, {
         type: sequelize.QueryTypes.SELECT,
         replacements: { id },
@@ -786,7 +786,7 @@ app.delete("/customers/:id", extractUserId, async (req, res) => {
       }
     }
 
-    await sequelize.query(`DELETE FROM "Customer" WHERE id = :id`, {
+    await sequelize.query(`DELETE FROM public."Customer" WHERE id = :id`, {
       replacements: { id },
       type: sequelize.QueryTypes.DELETE,
     });
@@ -816,7 +816,7 @@ app.put("/users", async (req, res) => {
 
     // Lấy trạng thái hiện tại của khách hàng
     const [userById] = await sequelize.query(
-      `SELECT username FROM "User" WHERE id = :id LIMIT 1`,
+      `SELECT username FROM public."User" WHERE id = :id LIMIT 1`,
       {
         replacements: { id: Number(id) },
         type: sequelize.QueryTypes.SELECT,
@@ -825,7 +825,7 @@ app.put("/users", async (req, res) => {
     const username = userById.username;
     const hashedPassword = await bcrypt.hash(username, 10);
     const query = `
-      UPDATE "User"
+      UPDATE public."User"
       SET password = :password  
       WHERE username = :username;
     `;
@@ -854,7 +854,7 @@ app.get("/employees", extractUserId, async (req, res) => {
     const userId = req.userId;
 
     // Lấy thông tin user hiện tại
-    const userQuery = `SELECT is_admin, team_id FROM "User" WHERE id = :userId`;
+    const userQuery = `SELECT is_admin, team_id FROM public."User" WHERE id = :userId`;
     const userInfo = await sequelize.query(userQuery, {
       type: sequelize.QueryTypes.SELECT,
       replacements: { userId },
@@ -880,14 +880,14 @@ app.get("/employees", extractUserId, async (req, res) => {
         SELECT u.id, u.name, u.username, u.team_id, u.status, u.is_team_lead, 
                c.username AS created_by_username, 
                u2.username AS updated_by_username
-        FROM "User" AS u
-        LEFT JOIN "User" c ON u.created_by = c.id
-        LEFT JOIN "User" u2 ON u.updated_by = u2.id
+        FROM public."User" AS u
+        LEFT JOIN public."User" c ON u.created_by = c.id
+        LEFT JOIN public."User" u2 ON u.updated_by = u2.id
         ${condition}
         ORDER BY u.is_team_lead DESC, u.team_id ASC, u.id ASC
         LIMIT :limit OFFSET :offset
       )
-      SELECT CAST((SELECT COUNT(*) FROM "User" u ${condition}) AS INTEGER) AS total, 
+      SELECT CAST((SELECT COUNT(*) FROM public."User" u ${condition}) AS INTEGER) AS total, 
              json_agg(user_data) AS users 
       FROM user_data;
     `;
@@ -939,7 +939,7 @@ app.post("/employees", async (req, res) => {
     }
 
     const query = `
-      INSERT INTO "User" 
+      INSERT INTO public."User" 
       (username, name, password, is_admin, is_team_lead, is_first_login, status, team_id, updated_at)
       VALUES 
       (:username, :name, :password, :isAdmin, :isTeamLead, true, :status, :teamId, NOW())
@@ -978,7 +978,7 @@ app.put("/employees/reset", async (req, res) => {
       return res.status(400).json({ error: "User ID is required" });
     }
 
-    const checkUserQuery = `SELECT COUNT(*)::int AS count, username FROM "User" WHERE id = :id GROUP BY username`;
+    const checkUserQuery = `SELECT COUNT(*)::int AS count, username FROM public."User" WHERE id = :id GROUP BY username`;
     const userExists = await sequelize.query(checkUserQuery, {
       replacements: { id },
       type: sequelize.QueryTypes.SELECT,
@@ -989,7 +989,7 @@ app.put("/employees/reset", async (req, res) => {
     }
     const username = userExists[0]?.username;
     const hashedPassword = await bcrypt.hash(username, 10);
-    const resetQuery = `UPDATE "User" SET password = :hashedPassword, is_first_login = TRUE WHERE id = :id`;
+    const resetQuery = `UPDATE public."User" SET password = :hashedPassword, is_first_login = TRUE WHERE id = :id`;
     await sequelize.query(resetQuery, { replacements: { hashedPassword, id } });
 
     res.json({ message: "Reset password successfully" });
@@ -1014,7 +1014,7 @@ app.put("/employees", extractUserId, async (req, res) => {
     }
 
     // Kiểm tra user có tồn tại không
-    const userCheckQuery = `SELECT id, is_admin FROM "User" WHERE id = :id`;
+    const userCheckQuery = `SELECT id, is_admin FROM public."User" WHERE id = :id`;
     const userCheck = await sequelize.query(userCheckQuery, {
       replacements: { id },
       type: sequelize.QueryTypes.SELECT,
@@ -1025,7 +1025,7 @@ app.put("/employees", extractUserId, async (req, res) => {
     }
 
     // Kiểm tra quyền hạn: Chỉ admin hoặc chính nhân viên mới có thể chỉnh sửa
-    const adminCheckQuery = `SELECT is_admin, is_team_lead FROM "User" WHERE id = :userId`;
+    const adminCheckQuery = `SELECT is_admin, is_team_lead FROM public."User" WHERE id = :userId`;
     const adminCheck = await sequelize.query(adminCheckQuery, {
       replacements: { userId },
       type: sequelize.QueryTypes.SELECT,
@@ -1073,7 +1073,7 @@ app.put("/employees", extractUserId, async (req, res) => {
     }
 
     const updateQuery = `
-      UPDATE "User"
+      UPDATE public."User"
       SET ${updateFields.join(
         ", "
       )}, updated_at = NOW(), updated_by = :updated_by
@@ -1123,8 +1123,8 @@ app.get("/statistical", async (req, res) => {
        ELSE '0'
        END AS caller, 
        t.team_name
-      FROM "Customer" AS c
-      INNER JOIN "Team" AS t ON c.team_id = t.id
+      FROM public."Customer" AS c
+      INNER JOIN public."Team" AS t ON c.team_id = t.id
       WHERE c.status = '2' OR c.status = '0'
       AND DATE_TRUNC('month', c.updated_at) = DATE_TRUNC('month', NOW())
       ${whereClause}
@@ -1172,17 +1172,17 @@ app.get("/teams", extractUserId, async (req, res) => {
     const teamsQuery = `
       WITH user_team AS (
           SELECT team_id, is_admin 
-          FROM "User" 
+          FROM public."User" 
           WHERE id = :userId
       )
       SELECT t.*, 
             u.username AS created_by, 
             u2.username AS updated_by
-      FROM "Team" t
+      FROM public."Team" t
       INNER JOIN user_team ut 
       ON (ut.is_admin = true OR t.id = ut.team_id)
-      LEFT JOIN "User" u ON t.created_by = u.id
-      LEFT JOIN "User" u2 ON t.updated_by = u2.id
+      LEFT JOIN public."User" u ON t.created_by = u.id
+      LEFT JOIN public."User" u2 ON t.updated_by = u2.id
       ORDER BY t.created_at ASC, t.team_name ASC, t.id ASC
       ${page && limit ? `LIMIT :limitNum OFFSET :offset` : ``} 
     `;
@@ -1196,11 +1196,11 @@ app.get("/teams", extractUserId, async (req, res) => {
     const countQuery = `
       WITH user_team AS (
           SELECT team_id, is_admin 
-          FROM "User" 
+          FROM public."User" 
           WHERE id = :userId
       )
       SELECT COUNT(*)::int AS total 
-      FROM "Team" t
+      FROM public."Team" t
       INNER JOIN user_team ut 
       ON (ut.is_admin = true OR t.id = ut.team_id)
     `;
@@ -1236,7 +1236,7 @@ app.post("/teams", async (req, res) => {
 
     // Kiểm tra xem team đã tồn tại chưa
     const existingTeam = await sequelize.query(
-      `SELECT * FROM "Team" WHERE team_name = :team_name LIMIT 1`,
+      `SELECT * FROM public."Team" WHERE team_name = :team_name LIMIT 1`,
       {
         type: sequelize.QueryTypes.SELECT,
         replacements: { team_name },
@@ -1249,7 +1249,7 @@ app.post("/teams", async (req, res) => {
 
     // Tạo team mới
     await sequelize.query(
-      `INSERT INTO "Team" (team_name, updated_at) VALUES (:team_name, NOW())`,
+      `INSERT INTO public."Team" (team_name, updated_at) VALUES (:team_name, NOW())`,
       {
         type: sequelize.QueryTypes.INSERT,
         replacements: { team_name },
@@ -1285,7 +1285,7 @@ app.put("/teams/:id", async (req, res) => {
 
     // Kiểm tra xem team có tồn tại không
     const existingTeam = await sequelize.query(
-      `SELECT * FROM "Team" WHERE id = :teamId LIMIT 1`,
+      `SELECT * FROM public."Team" WHERE id = :teamId LIMIT 1`,
       {
         type: sequelize.QueryTypes.SELECT,
         replacements: { teamId },
@@ -1298,7 +1298,7 @@ app.put("/teams/:id", async (req, res) => {
 
     // Kiểm tra xem tên team mới đã tồn tại chưa (tránh trùng lặp)
     const duplicateTeam = await sequelize.query(
-      `SELECT * FROM "Team" WHERE team_name = :team_name AND id != :teamId LIMIT 1`,
+      `SELECT * FROM public."Team" WHERE team_name = :team_name AND id != :teamId LIMIT 1`,
       {
         type: sequelize.QueryTypes.SELECT,
         replacements: { team_name, teamId },
@@ -1312,7 +1312,7 @@ app.put("/teams/:id", async (req, res) => {
     // Cập nhật team
     await sequelize.query(
       `
-      UPDATE "Team"
+      UPDATE public."Team"
       SET team_name = :team_name,
           updated_at = NOW(),
           updated_by = :updated_by
